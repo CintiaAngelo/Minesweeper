@@ -1,0 +1,350 @@
+<app-header
+  (toggleDarkMode)="onToggleDarkMode($event)"
+  (openInstructions)="onOpenInstructions()"
+></app-header>
+
+<div class="game-container" [class.dark-mode]="isDarkMode">
+  <div class="game-layout">
+    <!-- Painel de Contadores -->
+    <div class="counters-panel">
+      <div class="panel-header">
+        <h3 class="panel-title">Estatísticas</h3>
+      </div>
+      <div class="counter-card">
+        <div class="counter-icon">
+          <span class="material-icons">schedule</span>
+        </div>
+        <div class="counter-info">
+          <div class="counter-label">Tempo</div>
+          <div class="counter-value">{{ formatTime(elapsedTime) }}</div>
+        </div>
+      </div>
+
+      <div class="counter-card">
+        <div class="counter-icon">
+          <span class="material-icons">mouse</span>
+        </div>
+        <div class="counter-info">
+          <div class="counter-label">Cliques</div>
+          <div class="counter-value">{{ clickCount }}</div>
+        </div>
+      </div>
+
+      <div class="counter-card">
+        <div class="counter-icon">
+          <span class="material-icons">flag</span>
+        </div>
+        <div class="counter-info">
+          <div class="counter-label">Minas Restantes</div>
+          <div class="counter-value">{{ getRemainingMines() }}</div>
+        </div>
+      </div>
+
+      <div class="counter-card level-info">
+        <div class="counter-icon">
+          <span class="material-icons">sports_esports</span>
+        </div>
+        <div class="counter-info">
+          <div class="counter-label">Nível</div>
+          <div class="counter-value">{{ selectedLevel.name }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Área Principal do Jogo -->
+    <div class="game-main-area">
+      <div class="game-controls-section">
+        <div class="controls-card">
+          <div class="controls-group">
+            <div class="form-field">
+              <label for="level" class="form-label">Nível de Dificuldade</label>
+              <select 
+                id="level" 
+                [(ngModel)]="selectedLevel" 
+                (change)="onLevelChange()"
+                class="form-select"
+              >
+                @for (level of levels; track level.name) {
+                  <option [ngValue]="level">
+                    {{ level.name }} ({{ level.rows }}x{{ level.cols }} - {{ level.mines }} minas)
+                  </option>
+                }
+              </select>
+            </div>
+
+            @if (selectedLevel.name === 'Personalizado') {
+              <div class="custom-config">
+                <div class="form-field">
+                  <label class="form-label">Linhas</label>
+                  <input 
+                    type="number" 
+                    [(ngModel)]="customConfig.rows" 
+                    min="4" 
+                    max="20"
+                    class="form-input"
+                  >
+                </div>
+                <div class="form-field">
+                  <label class="form-label">Colunas</label>
+                  <input 
+                    type="number" 
+                    [(ngModel)]="customConfig.cols" 
+                    min="4" 
+                    max="20"
+                    class="form-input"
+                  >
+                </div>
+                <div class="form-field">
+                  <label class="form-label">Minas</label>
+                  <input 
+                    type="number" 
+                    [(ngModel)]="customConfig.mines" 
+                    min="1" 
+                    [max]="customConfig.rows * customConfig.cols - 1"
+                    class="form-input"
+                  >
+                </div>
+              </div>
+            }
+            
+            <button (click)="startNewGame()" [disabled]="loading" class="primary-button">
+  <span class="material-icons">refresh</span>
+  {{ loading ? 'Carregando...' : 'Novo Jogo' }}
+</button>
+          </div>
+        </div>
+
+       @if (board) {
+  <div class="game-status">
+    <div class="status-item">
+      <span class="status-label">Tamanho:</span>
+      <span class="status-value">{{ board.rows }}x{{ board.cols }}</span>
+    </div>
+    <div class="status-item" [class]="getStatusClass()">
+      <span class="status-label">Status:</span>
+      <span class="status-value">
+        <span class="material-icons status-icon">
+          {{ getStatusIcon() }}
+        </span>
+        {{ getGameStatus() }}
+      </span>
+    </div>
+  </div>
+}
+      </div>
+
+      @if (loading) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Carregando jogo...</p>
+        </div>
+      } @else if (board) {
+        <div class="board-container">
+          <div class="board" [style.gridTemplate]="getGridTemplate()">
+            @for (row of [].constructor(board.rows); track $index; let r = $index) {
+              @for (col of [].constructor(board.cols); track $index; let c = $index) {
+                @let cell = getCell(r, c);
+                @if (cell) {
+                  <div 
+                    class="cell"
+                    [class.revealed]="cell.revealed"
+                    [class.mine]="(cell.revealed && cell.mine) || (board.gameOver && cell.mine)"
+                    [class.flagged]="cell.flagged"
+                    [class.game-over]="board.gameOver"
+                    (click)="onCellClick(cell, $event)"
+                    (contextmenu)="onCellClick(cell, $event)"
+                  >
+                    @if (cell.flagged) {
+                      <span class="material-icons cell-flag">flag</span>
+                    } @else if (cell.revealed || (board.gameOver && cell.mine)) {
+                      @if (cell.mine) {
+                        <span class="cell-mine">💣</span>
+                      } @else if (cell.adjacentMines > 0) {
+                        <span class="cell-number number-{{cell.adjacentMines}}">
+                          {{ cell.adjacentMines }}
+                        </span>
+                      }
+                    } @else if (board.gameOver && cell.mine && !cell.flagged) {
+                      <span class="cell-mine">💣</span>
+                    }
+                  </div>
+                }
+              }
+            }
+          </div>
+        </div>
+      }
+
+      <div class="instructions-card">
+        <h4 class="instructions-title">Como Jogar</h4>
+        <ul class="instructions-list">
+          <li class="instruction-item">
+            <span class="material-icons">touch_app</span>
+            Clique esquerdo para revelar célula
+          </li>
+          <li class="instruction-item">
+            <span class="material-icons">flag</span>
+            Clique direito para colocar/remover bandeira
+          </li>
+          <li class="instruction-item">
+            <span class="material-icons">auto_awesome</span>
+            Células vazias revelam automaticamente as adjacentes
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Painel de Histórico -->
+    <div class="history-panel">
+      <div class="panel-header">
+        <h3 class="panel-title">Histórico</h3>
+        <button class="icon-button" (click)="clearHistory()" title="Limpar Histórico">
+          <span class="material-icons">delete</span>
+        </button>
+      </div>
+      
+      @if (hasHistory()) {
+        <div class="history-list">
+          @for (game of gameHistory; track game.id) {
+            <div class="history-item" [class]="getResultClass(game.result)">
+              <div class="history-result">
+                <span class="material-icons history-icon">
+                  {{ game.result === 'won' ? 'emoji_events' : 'warning' }}
+                </span>
+                <span class="history-status">{{ getResultText(game.result) }}</span>
+              </div>
+              
+              <div class="history-details">
+                <div class="history-level">{{ game.level }}</div>
+                <div class="history-stats">
+                  <div class="history-stat">
+                    <span class="material-icons">schedule</span>
+                    {{ formatHistoryTime(game.duration) }}
+                  </div>
+                  <div class="history-stat">
+                    <span class="material-icons">mouse</span>
+                    {{ game.clicks }}
+                  </div>
+                </div>
+                <div class="history-meta">
+                  <span class="history-size">{{ game.size }}</span>
+                  <span class="history-mines">{{ game.mines }} minas</span>
+                </div>
+                <div class="history-date">{{ formatHistoryDate(game.date) }}</div>
+              </div>
+            </div>
+          }
+        </div>
+        
+        <div class="history-footer">
+          <span class="caption">Mostrando {{ gameHistory.length }} de 3 partidas</span>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <div class="empty-icon">
+            <span class="material-icons">sports_esports</span>
+          </div>
+          <p class="empty-title">Nenhuma partida jogada</p>
+          <p class="empty-description">As últimas 3 partidas aparecerão aqui</p>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Pop-up de Estatísticas do Jogo -->
+  @if (showGameStats) {
+    <div class="stats-overlay" (click)="onCloseGameStats()">
+      <div class="stats-modal" (click)="$event.stopPropagation()">
+        <div class="stats-header">
+          <h2 class="stats-title">{{ getGameResultMessage() }}</h2>
+          <button class="close-button" (click)="onCloseGameStats()">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+        
+        <div class="stats-content">
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-icon">
+                <span class="material-icons">schedule</span>
+              </div>
+              <div class="stat-info">
+                <div class="stat-label">Tempo Total</div>
+                <div class="stat-value">{{ formatTime(elapsedTime) }}</div>
+              </div>
+            </div>
+
+            <div class="stat-item">
+              <div class="stat-icon">
+                <span class="material-icons">mouse</span>
+              </div>
+              <div class="stat-info">
+                <div class="stat-label">Total de Cliques</div>
+                <div class="stat-value">{{ clickCount }}</div>
+              </div>
+            </div>
+
+            <div class="stat-item">
+              <div class="stat-icon">
+                <span class="material-icons">sports_esports</span>
+              </div>
+              <div class="stat-info">
+                <div class="stat-label">Nível</div>
+                <div class="stat-value">{{ selectedLevel.name }}</div>
+              </div>
+            </div>
+
+            <div class="stat-item">
+              <div class="stat-icon">
+                <span class="material-icons">grid_view</span>
+              </div>
+              <div class="stat-info">
+                <div class="stat-label">Tamanho</div>
+                <div class="stat-value">{{ board?.rows }}x{{ board?.cols }}</div>
+              </div>
+            </div>
+
+            <div class="stat-item">
+              <div class="stat-icon">
+                <span>💣</span>
+              </div>
+              <div class="stat-info">
+                <div class="stat-label">Minas</div>
+                <div class="stat-value">{{ board?.totalMines }}</div>
+              </div>
+            </div>
+
+            <div class="stat-item">
+              <div class="stat-icon">
+                <span class="material-icons">bolt</span>
+              </div>
+              <div class="stat-info">
+                <div class="stat-label">Eficiência</div>
+                <div class="stat-value">
+                  {{ clickCount > 0 ? (elapsedTime / clickCount).toFixed(2) + 's/clique' : 'N/A' }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stats-message" [class.win]="board?.won" [class.lose]="board?.gameOver">
+            @if (board?.won) {
+              <p>Excelente! Você completou o jogo com sucesso!</p>
+            } @else if (board?.gameOver) {
+              <p>Não desanime! Tente novamente com mais cuidado.</p>
+            }
+          </div>
+        </div>
+
+        <div class="stats-actions">
+          <button class="secondary-button" (click)="onCloseGameStats()">
+            Continuar
+          </button>
+          <button class="primary-button" (click)="restartGame()">
+            Jogar Novamente
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

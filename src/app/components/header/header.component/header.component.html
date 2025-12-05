@@ -1,0 +1,144 @@
+<header class="header">
+  <div class="header-content">
+    <div class="logo-section">
+      <h1 class="logo">Campo Minado</h1>
+    </div>
+    
+    <div class="header-actions">
+      <button 
+        class="header-btn instructions-btn"
+        (click)="onOpenInstructions()"
+        title="Manual de Instruções"
+      >
+        <span class="material-icons">help</span>
+        Instruções
+      </button>
+      
+      <button 
+        class="header-btn dark-mode-btn"
+        (click)="onToggleDarkMode()"
+        [title]="isDarkMode ? 'Desativar Modo Noturno' : 'Ativar Modo Noturno'"
+      >
+        <span class="material-icons">{{ isDarkMode ? 'dark_mode' : 'light_mode' }}</span>
+        {{ isDarkMode ? 'Modo Claro' : 'Modo Noturno' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Pop-up de Instruções -->
+  @if (showInstructions) {
+    <div class="instructions-overlay" (click)="onCloseInstructions()">
+      <div 
+        class="instructions-modal" 
+        [class.dark-mode]="isDarkMode"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="modal-header">
+          <h2>
+            <span class="material-icons">menu_book</span>
+            Manual de Instruções - Campo Minado
+          </h2>
+          <button class="close-btn" (click)="onCloseInstructions()">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+        
+        <div class="modal-content">
+          <div class="instructions-section">
+            <h3>
+              <span class="material-icons">target</span>
+              Objetivo do Jogo
+            </h3>
+            <p>Revelar todas as células que não contêm minas sem clicar em nenhuma mina.</p>
+          </div>
+
+          <div class="instructions-section">
+            <h3>
+              <span class="material-icons">sports_esports</span>
+              Como Jogar
+            </h3>
+            <div class="instruction-item">
+              <span class="material-icons">touch_app</span>
+              <div>
+                <strong>Clique Esquerdo:</strong> Revela a célula
+              </div>
+            </div>
+            <div class="instruction-item">
+              <span class="material-icons">flag</span>
+              <div>
+                <strong>Clique Direito ou Ctrl + Clique:</strong> Coloca/remove bandeira
+              </div>
+            </div>
+            <div class="instruction-item">
+              <span class="material-icons">auto_awesome</span>
+              <div>
+                <strong>Células Vazias:</strong> Revelam automaticamente todas as células adjacentes
+              </div>
+            </div>
+          </div>
+
+          <div class="instructions-section">
+            <h3>
+              <span class="material-icons"></span>
+              Significado dos Números
+            </h3>
+            <p>Os números indicam quantas minas existem nas 8 células ao redor.</p>
+            <div class="numbers-example">
+              <div class="number-demo number-1">1</div>
+              <span>→ 1 mina próxima</span>
+            </div>
+            <div class="numbers-example">
+              <div class="number-demo number-2">2</div>
+              <span>→ 2 minas próximas</span>
+            </div>
+            <div class="numbers-example">
+              <div class="number-demo number-3">3</div>
+              <span>→ 3 minas próximas</span>
+            </div>
+          </div>
+
+          <div class="instructions-section">
+            <h3>
+              <span class="material-icons">bar_chart</span>
+              Níveis de Dificuldade
+            </h3>
+            <div class="level-info">
+              <div class="level-item">
+                <strong>Fácil:</strong> 8x8 - 10 minas
+              </div>
+              <div class="level-item">
+                <strong>Médio:</strong> 12x12 - 25 minas
+              </div>
+              <div class="level-item">
+                <strong>Difícil:</strong> 16x16 - 50 minas
+              </div>
+              <div class="level-item">
+                <strong>Personalizado:</strong> Escolha seu próprio tamanho e número de minas
+              </div>
+            </div>
+          </div>
+
+          <div class="instructions-section">
+            <h3>
+              <span class="material-icons">tips_and_updates</span>
+              Dicas para Vencer
+            </h3>
+            <ul class="tips-list">
+              <li>Comece clicando no centro do tabuleiro</li>
+              <li>Use bandeiras para marcar minas conhecidas</li>
+              <li>Preste atenção nos números para deduzir a localização das minas</li>
+              <li>Se um número X tem exatamente X células não-reveladas ao redor, todas são minas</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="got-it-btn" (click)="onCloseInstructions()">
+            <span class="material-icons">check</span>
+            Entendi! Vamos Jogar!
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</header>
