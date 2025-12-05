@@ -1,2 +1,1 @@
-# Minesweeper-Front-End
 # Minesweeper
